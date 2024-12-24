@@ -54,7 +54,7 @@ public class UsersService {
   }
 
   public ResponseEntity<UserCreatedResponse> create(CreateUserDTO dto) throws JsonProcessingException {
-    Optional<Users> exist = this.userRepository.findByEmailOrPhoneNumber(dto.getEmail(), dto.getPhoneNumber());
+    Optional<Users> exist = this.userRepository.findByEmailOrPhoneNumber(dto.getEmail().toLowerCase(), dto.getPhoneNumber());
     UserCreatedResponse response = new UserCreatedResponse();
     if (exist.isPresent()) {
       throw new BadRequestException("User already exists");

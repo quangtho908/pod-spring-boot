@@ -1,6 +1,5 @@
 package org.example.podbackend.common.filters;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,7 +9,9 @@ import org.example.podbackend.Security.Models.PodUserDetail;
 import org.example.podbackend.entities.Users;
 import org.example.podbackend.repositories.UserRepository;
 import org.example.podbackend.utils.JWTService;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -24,16 +25,13 @@ import java.util.*;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private final JWTService jwtService;
   private final UserRepository userRepository;
-  private final ObjectMapper objectMapper;
 
   public JwtAuthenticationFilter(
           JWTService jwtService,
-          UserRepository userRepository,
-          ObjectMapper objectMapper
+          UserRepository userRepository
   ) {
     this.jwtService = jwtService;
     this.userRepository = userRepository;
-    this.objectMapper = objectMapper;
   }
   @Override
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {

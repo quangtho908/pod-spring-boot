@@ -1,9 +1,9 @@
 package org.example.podbackend.Security;
 
-import jakarta.validation.ConstraintViolationException;
 import org.example.podbackend.common.models.ExceptionResponseModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -19,7 +19,6 @@ public class GlobalExceptionHandler {
     ExceptionResponseModel responseModel = new ExceptionResponseModel();
     HttpStatus status = getHttpStatusFromException(ex);
     responseModel.setMessage(ex.getMessage());
-
     return new ResponseEntity<>(responseModel, status);
   }
 
