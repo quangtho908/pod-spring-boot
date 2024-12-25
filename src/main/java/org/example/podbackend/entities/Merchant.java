@@ -35,4 +35,7 @@ public class Merchant extends BaseEntity {
 
   @OneToMany(mappedBy = "merchant")
   private List<InProgressOrder> inProgressOrders;
+
+  @OneToMany(mappedBy = "merchant")
+  private List<BankAccount> bankAccounts;
 }
