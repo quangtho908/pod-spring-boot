@@ -27,7 +27,7 @@ public class BankAccountController {
   }
 
   @PutMapping("/{id}")
-  public ResponseEntity<Boolean> setDefault(@PathVariable Long id, @RequestBody Long merchantId) {
+  public ResponseEntity<Boolean> setDefault(@PathVariable Long id, @RequestParam Long merchantId) {
     return this.bankAccountService.setDefault(id, merchantId);
   }
 
