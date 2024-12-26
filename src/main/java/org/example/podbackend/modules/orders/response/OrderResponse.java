@@ -7,14 +7,13 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import lombok.Data;
 import org.example.podbackend.common.enums.StatusOrder;
-import org.example.podbackend.entities.Tables;
 import org.example.podbackend.modules.tables.response.TablesFilterResponse;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-public class OrderFilterResponse {
+public class OrderResponse {
   private long id;
   private String note;
 

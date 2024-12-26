@@ -7,8 +7,7 @@ import org.example.podbackend.common.exceptions.BadRequestException;
 import org.example.podbackend.common.mapper.OrderMapper;
 import org.example.podbackend.entities.*;
 import org.example.podbackend.modules.orders.DTO.*;
-import org.example.podbackend.modules.orders.response.OrderCreateResponse;
-import org.example.podbackend.modules.orders.response.OrderFilterResponse;
+import org.example.podbackend.modules.orders.response.OrderResponse;
 import org.example.podbackend.repositories.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.PageRequest;
@@ -22,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -77,11 +77,11 @@ public class OrderService {
             dto.getToDate(),
             PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "createdAt"))
     );
-    List<OrderFilterResponse> response = orderMapper.mapToResponse(inProgressOrders);
+    List<OrderResponse> response = orderMapper.mapToResponse(inProgressOrders);
     return ResponseEntity.ok(response);
   }
 
-  public ResponseEntity<OrderCreateResponse> createOrder(CreateOrderDTO dto) throws ExecutionException, InterruptedException {
+  public ResponseEntity<OrderResponse> createOrder(CreateOrderDTO dto) throws ExecutionException, InterruptedException {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     PodUserDetail userDetails = (PodUserDetail) authentication.getPrincipal();
     CompletableFuture<Merchant> merchantRead = CompletableFuture.supplyAsync(() ->
@@ -92,7 +92,7 @@ public class OrderService {
       asyncExecutor
     );
     CompletableFuture<Tables> tableRead = CompletableFuture.supplyAsync(() ->
-      tableRepository.findByIdAndMerchantIdAndIsUsedIsFalseAndIsDeletedIsFalse(dto.getTableId(), dto.getMerchantId()), asyncExecutor
+      dto.getTableId() == null ? null : tableRepository.findByIdAndMerchantIdAndIsUsedIsFalseAndIsDeletedIsFalse(dto.getTableId(), dto.getMerchantId()), asyncExecutor
     );
     CompletableFuture<Void> allTasks = CompletableFuture.allOf(merchantRead, userRead, tableRead);
     allTasks.join();
@@ -102,11 +102,10 @@ public class OrderService {
     Users user = userRead.get();
     if(user == null) throw new BadRequestException("User not found");
     Tables table = tableRead.get();
-    if(table == null) throw new BadRequestException("Table not found");
 
     InProgressOrder inProgressOrder = modelMapper.map(dto, InProgressOrder.class);
     inProgressOrder.setMerchant(merchant);
-    inProgressOrder.setTables(table);
+    if(table != null)  inProgressOrder.setTables(table);;
     inProgressOrder.setCreatedBy(user);
 
     InProgressOrder savedInProgressOrder = inProgressOrderRepository.save(inProgressOrder);
@@ -122,10 +121,13 @@ public class OrderService {
       }, asyncExecutor)
     ).toArray(CompletableFuture[]::new));
     threads.join();
-    table.setUsed(true);
-    this.tableRepository.save(table);
-    OrderCreateResponse response = modelMapper.map(savedInProgressOrder, OrderCreateResponse.class);
-    return ResponseEntity.ok(response);
+    if(table != null ) {
+      table.setUsed(true);
+      this.tableRepository.save(table);
+    }
+
+    OrderResponse filterResponse = orderMapper.mapToResponse(savedInProgressOrder);
+    return ResponseEntity.ok(filterResponse);
   }
 
   public ResponseEntity<Boolean> updateOrder(UpdateOrderDTO dto, Long orderId) throws ExecutionException, InterruptedException {
@@ -174,7 +176,7 @@ public class OrderService {
     if (inProgressOrder == null) throw new BadRequestException("Order does not exist");
     inProgressOrder.setStatus(dto.getStatus());
     this.inProgressOrderRepository.save(inProgressOrder);
-    if(dto.getStatus().equals(StatusOrder.DONE) || dto.getStatus().equals(StatusOrder.CANCELED)) {
+    if((dto.getStatus().equals(StatusOrder.DONE) || dto.getStatus().equals(StatusOrder.CANCELED)) && inProgressOrder.getTables() != null) {
       _resetTable(inProgressOrder.getTables());
     }
     return ResponseEntity.ok(true);

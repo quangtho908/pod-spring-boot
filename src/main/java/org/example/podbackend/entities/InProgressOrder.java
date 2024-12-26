@@ -23,7 +23,7 @@ public class InProgressOrder extends BaseEntity {
   @OneToMany(mappedBy = "inProgressOrder")
   private List<ProductOrder> productOrders;
 
-  @ManyToOne(optional = false)
+  @ManyToOne()
   @JoinColumn(name = "table_id")
   private Tables tables;
 

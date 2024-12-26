@@ -5,7 +5,7 @@ import org.example.podbackend.modules.orders.DTO.ChangeStatusOrderDTO;
 import org.example.podbackend.modules.orders.DTO.CreateOrderDTO;
 import org.example.podbackend.modules.orders.DTO.RemoveProductOrderDTO;
 import org.example.podbackend.modules.orders.DTO.UpdateOrderDTO;
-import org.example.podbackend.modules.orders.response.OrderCreateResponse;
+import org.example.podbackend.modules.orders.response.OrderResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,7 +26,7 @@ public class OrderController {
   }
 
   @PostMapping()
-  public ResponseEntity<OrderCreateResponse> createOrder(@RequestBody @Valid CreateOrderDTO dto) throws ExecutionException, InterruptedException {
+  public ResponseEntity<OrderResponse> createOrder(@RequestBody @Valid CreateOrderDTO dto) throws ExecutionException, InterruptedException {
     return this.orderService.createOrder(dto);
   }
 

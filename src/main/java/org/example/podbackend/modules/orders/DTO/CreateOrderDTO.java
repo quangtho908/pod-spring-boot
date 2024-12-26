@@ -16,7 +16,6 @@ public class CreateOrderDTO {
 
   private String note;
 
-  @NotNull(message = "Table id is required")
   private Long tableId;
 
   @Valid

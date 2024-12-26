@@ -3,13 +3,12 @@ package org.example.podbackend.modules.bankAccount;
 import org.example.podbackend.Security.Models.PodUserDetail;
 import org.example.podbackend.common.exceptions.BadRequestException;
 import org.example.podbackend.common.exceptions.NotFoundException;
-import org.example.podbackend.entities.BankAccount;
-import org.example.podbackend.entities.Merchant;
-import org.example.podbackend.entities.Product;
-import org.example.podbackend.entities.ProductOrder;
+import org.example.podbackend.common.mapper.BankAccountMapper;
+import org.example.podbackend.entities.*;
 import org.example.podbackend.modules.bankAccount.DTO.CreateBankAccountDTO;
 import org.example.podbackend.modules.bankAccount.response.BankAccountResponse;
 import org.example.podbackend.repositories.BankAccountsRepository;
+import org.example.podbackend.repositories.BankRepository;
 import org.example.podbackend.repositories.MerchantRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
@@ -26,18 +25,20 @@ public class BankAccountService {
   private final BankAccountsRepository bankAccountsRepository;
   private final ModelMapper modelMapper;
   private final MerchantRepository merchantRepository;
-  private final Executor asyncExecutor;
+  private final BankRepository bankRepository;
+  private final BankAccountMapper bankAccountMapper;
 
   public BankAccountService(
           BankAccountsRepository bankAccountsRepository,
           ModelMapper modelMapper,
           MerchantRepository merchantRepository,
-          Executor asyncExecutor
-  ) {
+          BankRepository bankRepository,
+          BankAccountMapper bankAccountMapper) {
     this.bankAccountsRepository = bankAccountsRepository;
     this.modelMapper = modelMapper;
     this.merchantRepository = merchantRepository;
-    this.asyncExecutor = asyncExecutor;
+    this.bankRepository = bankRepository;
+    this.bankAccountMapper = bankAccountMapper;
   }
 
   public ResponseEntity<List<BankAccountResponse>> getAll(Long merchantId) {
@@ -45,7 +46,7 @@ public class BankAccountService {
       throw new BadRequestException("Merchant Id cannot be null");
     }
     List<BankAccount> accounts = bankAccountsRepository.findByMerchantId(merchantId);
-    List<BankAccountResponse> accountResponses = accounts.stream().map(account -> modelMapper.map(account, BankAccountResponse.class)).toList();
+    List<BankAccountResponse> accountResponses = accounts.stream().map(bankAccountMapper::mapToResponse).toList();
     return ResponseEntity.ok(accountResponses);
   }
 
@@ -59,13 +60,18 @@ public class BankAccountService {
     if (merchant == null) {
       throw new BadRequestException("Merchant not found");
     }
-    BankAccount bankAccount = modelMapper.map(dto, BankAccount.class);
+    Bank bank = this.bankRepository.findByBin(dto.getBankBin());
+    if (bank == null) {
+      throw new BadRequestException("Bank not found");
+    }
 
+    BankAccount bankAccount = modelMapper.map(dto, BankAccount.class);
+    bankAccount.setBank(bank);
+    bankAccount.setMerchant(merchant);
     List<BankAccount>  bankAccounts = bankAccountsRepository.findByMerchantId(merchant.getId());
     if(bankAccounts.isEmpty()) {
       bankAccount.setPrimary(true);
     }
-    bankAccount.setMerchant(merchant);
     bankAccountsRepository.save(bankAccount);
     return ResponseEntity.ok(modelMapper.map(bankAccount, BankAccountResponse.class));
   }

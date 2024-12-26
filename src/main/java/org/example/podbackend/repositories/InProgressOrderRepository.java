@@ -2,7 +2,6 @@ package org.example.podbackend.repositories;
 
 import org.example.podbackend.common.enums.StatusOrder;
 import org.example.podbackend.entities.InProgressOrder;
-import org.example.podbackend.modules.orders.response.OrderFilterResponse;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 

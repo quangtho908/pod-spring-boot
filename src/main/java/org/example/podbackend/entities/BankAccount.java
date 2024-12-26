@@ -11,9 +11,6 @@ import lombok.Setter;
 @Getter
 @Entity
 public class BankAccount extends BaseEntity {
-  @Column(nullable = false, name = "bank_bin")
-  private String bankBin;
-
   @Column(nullable = false, name = "account_number")
   private String accountNumber;
 
@@ -26,4 +23,8 @@ public class BankAccount extends BaseEntity {
   @ManyToOne(optional = false)
   @JoinColumn(name = "merchant_id")
   private Merchant merchant;
+
+  @ManyToOne(optional = false)
+  @JoinColumn(name = "bank_id")
+  private Bank bank;
 }
