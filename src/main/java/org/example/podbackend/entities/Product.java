@@ -15,6 +15,7 @@ public class Product extends BaseEntity {
   private String name;
   private long price;
   private int quantity;
+  private String image;
 
   @ManyToOne(optional = false)
   @JoinColumn(name = "merchant_id")

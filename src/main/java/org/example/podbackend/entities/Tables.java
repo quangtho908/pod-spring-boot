@@ -16,9 +16,6 @@ public class Tables extends BaseEntity {
   @Column(nullable = false, name = "is_used")
   private boolean isUsed = false;
 
-  @Column(nullable = false, name = "is_deleted")
-  private boolean isDeleted = false;
-
   @ManyToOne(optional = false)
   @JoinColumn(name = "merchant_id")
   private Merchant merchant;

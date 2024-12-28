@@ -9,4 +9,5 @@ public class ProductOrderResponseDTO {
   private String name;
   private int quantity;
   private long price;
+  private String image;
 }

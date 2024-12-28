@@ -17,12 +17,17 @@ public class AuthController {
     this.authService = authService;
   }
 
-  @PostMapping("/login")
+  @GetMapping("/check")
+  public ResponseEntity<Boolean> checkToken() {
+    return ResponseEntity.ok(true);
+  }
+
+  @PostMapping("/u/login")
   public ResponseEntity<LoginResponse> login(@RequestBody @Valid LoginDTO loginDTO) throws JsonProcessingException {
     return this.authService.login(loginDTO);
   }
 
-  @PostMapping("/signup")
+  @PostMapping("/u/signup")
   public ResponseEntity<LoginResponse> singup(@RequestBody @Valid CreateUserDTO dto) throws JsonProcessingException {
     return this.authService.signup(dto);
   }

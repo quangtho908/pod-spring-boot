@@ -7,4 +7,5 @@ public class ProductFilterResponse {
   private long id;
   private String name;
   private long price;
+  private String image;
 }

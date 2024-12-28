@@ -39,7 +39,7 @@ public class TableService {
       throw new NotFoundException("Merchant not found");
     }
     if(dto.getId() != null) {
-      Tables table = this.tableRepository.findByIdAndMerchantIdAndIsDeletedIsFalse(dto.getId(), dto.getMerchantId());
+      Tables table = this.tableRepository.findByIdAndMerchantId(dto.getId(), dto.getMerchantId());
       TablesFilterResponse response = new TablesFilterResponse();
       modelMapper.map(table, response);
       return ResponseEntity.ok(response);
@@ -63,7 +63,7 @@ public class TableService {
   }
 
   public ResponseEntity<Boolean> update(Long id, SetTablesDTO dto) {
-    Tables table = this.tableRepository.findByIdAndMerchantIdAndIsDeletedIsFalse(id, dto.getMerchantId());
+    Tables table = this.tableRepository.findByIdAndMerchantId(id, dto.getMerchantId());
     if(table == null) throw new NotFoundException("Table not found");
     modelMapper.map(dto, table);
     this.tableRepository.save(table);
@@ -71,10 +71,9 @@ public class TableService {
   }
 
   public ResponseEntity<Boolean> delete(Long id, Long merchantId) {
-    Tables table = this.tableRepository.findByIdAndMerchantIdAndIsUsedIsFalseAndIsDeletedIsFalse(id, merchantId);
+    Tables table = this.tableRepository.findByIdAndMerchantIdAndIsUsedIsFalse(id, merchantId);
     if(table == null) throw new NotFoundException("Table not found");
-    table.setDeleted(true);
-    this.tableRepository.save(table);
+    this.tableRepository.delete(table);
     return ResponseEntity.ok(true);
   }
 }

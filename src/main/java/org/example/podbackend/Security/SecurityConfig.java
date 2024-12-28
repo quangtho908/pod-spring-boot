@@ -10,6 +10,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -36,16 +37,18 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
     httpSecurity
-            .authorizeHttpRequests(
-            (authorizeRequests) ->
-              authorizeRequests
-                      .requestMatchers("/api/auth/**").permitAll()
-                      .anyRequest().authenticated()
-            )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-            .exceptionHandling(exception -> exception.authenticationEntryPoint(podAuthenticationExceptionEntryPoint))
-            .csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()));
+      .authorizeHttpRequests(
+      (authorizeRequests) ->
+        authorizeRequests
+                .requestMatchers("/api/auth/u/**").permitAll()
+                .requestMatchers("/image/**").permitAll()
+
+                .anyRequest().authenticated()
+      )
+      .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+      .exceptionHandling(exception -> exception.authenticationEntryPoint(podAuthenticationExceptionEntryPoint))
+      .csrf(AbstractHttpConfigurer::disable)
+      .cors(cors -> cors.configurationSource(corsConfigurationSource()));
     return httpSecurity.build();
   }
 

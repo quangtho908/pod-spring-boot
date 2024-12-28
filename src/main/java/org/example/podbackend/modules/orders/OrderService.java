@@ -92,7 +92,7 @@ public class OrderService {
       asyncExecutor
     );
     CompletableFuture<Tables> tableRead = CompletableFuture.supplyAsync(() ->
-      dto.getTableId() == null ? null : tableRepository.findByIdAndMerchantIdAndIsUsedIsFalseAndIsDeletedIsFalse(dto.getTableId(), dto.getMerchantId()), asyncExecutor
+      dto.getTableId() == null ? null : tableRepository.findByIdAndMerchantIdAndIsUsedIsFalse(dto.getTableId(), dto.getMerchantId()), asyncExecutor
     );
     CompletableFuture<Void> allTasks = CompletableFuture.allOf(merchantRead, userRead, tableRead);
     allTasks.join();
