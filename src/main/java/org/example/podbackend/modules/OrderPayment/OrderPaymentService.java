@@ -13,12 +13,15 @@ import org.example.podbackend.modules.orders.OrderService;
 import org.example.podbackend.repositories.InProgressOrderRepository;
 import org.example.podbackend.repositories.MerchantRepository;
 import org.example.podbackend.repositories.OrderPaymentRepository;
+import org.example.podbackend.utils.CloudinaryService;
+import org.example.podbackend.utils.MultiPartHandle;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -32,12 +35,16 @@ public class OrderPaymentService {
   private final Executor asyncExecutor;
   private final ModelMapper modelMapper;
   private final OrderService orderService;
+  private final MultiPartHandle multiPartHandle;
+  private final CloudinaryService cloudinaryService;
   public OrderPaymentService(
           OrderPaymentRepository orderPaymentRepository,
           MerchantRepository merchantRepository,
           InProgressOrderRepository inProgressOrderRepository,
           Executor asyncExecutor, ModelMapper modelMapper,
-          OrderService orderService
+          OrderService orderService,
+          MultiPartHandle multiPartHandle,
+          CloudinaryService cloudinaryService
   ) {
     this.orderPaymentRepository = orderPaymentRepository;
     this.merchantRepository = merchantRepository;
@@ -45,9 +52,11 @@ public class OrderPaymentService {
     this.asyncExecutor = asyncExecutor;
     this.modelMapper = modelMapper;
     this.orderService = orderService;
+    this.multiPartHandle = multiPartHandle;
+    this.cloudinaryService = cloudinaryService;
   }
 
-  public ResponseEntity<Boolean> create(PaymentDTO dto) throws ExecutionException, InterruptedException {
+  public ResponseEntity<Boolean> create(PaymentDTO dto) throws ExecutionException, InterruptedException, IOException {
     Authentication auth = SecurityContextHolder.getContext().getAuthentication();
     PodUserDetail userDetail = (PodUserDetail) auth.getPrincipal();
     CompletableFuture<Merchant> merchantRead = CompletableFuture.supplyAsync(
@@ -68,7 +77,16 @@ public class OrderPaymentService {
     if (order == null) {
       throw new NotFoundException("Order not found");
     }
-    OrderPayment orderPayment = modelMapper.map(dto, OrderPayment.class);
+    OrderPayment orderPayment = new OrderPayment();
+    if(dto.getImage() != null) {
+      String localPath = multiPartHandle.handle(dto.getImage());
+      String url = cloudinaryService.upload(localPath, "orders_payments");
+      dto.setImage(null);
+      orderPayment.setImage(url);
+      multiPartHandle.delete(localPath);
+    }
+
+    modelMapper.map(dto, orderPayment);
     orderPayment.setMerchant(merchant);
     orderPayment.setInProgressOrder(order);
     this.orderPaymentRepository.save(orderPayment);

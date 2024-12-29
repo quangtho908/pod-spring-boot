@@ -22,4 +22,6 @@ public class OrderPayment extends BaseEntity {
   @ManyToOne()
   @JoinColumn(name = "merchant_id")
   private Merchant merchant;
+
+  private String image;
 }

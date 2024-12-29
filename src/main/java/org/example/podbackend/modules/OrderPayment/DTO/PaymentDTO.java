@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.example.podbackend.common.enums.PaymentMethod;
+import org.springframework.web.multipart.MultipartFile;
 
 @Data
 public class PaymentDTO {
@@ -17,4 +18,6 @@ public class PaymentDTO {
   private Long price;
 
   private PaymentMethod paymentMethod;
+
+  private MultipartFile image;
 }

@@ -46,7 +46,7 @@ public class MultiPartHandle {
     fos.flush();
     fos.close();
     is.close();
-    return STR."image/\{folder}/\{fileName}";
+    return uploadLocalFolder.getAbsolutePath();
   }
 
   public String handle(MultipartFile file) throws IOException {
@@ -69,6 +69,13 @@ public class MultiPartHandle {
   private void createFolder(File file) {
     if (!file.exists()) {
       file.mkdirs();
+    }
+  }
+
+  public void delete(String uri) {
+    File file = new File(uri);
+    if (file.exists()) {
+      file.delete();
     }
   }
 }

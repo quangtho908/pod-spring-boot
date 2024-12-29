@@ -11,6 +11,7 @@ import org.example.podbackend.modules.products.DTO.FilterProductDTO;
 import org.example.podbackend.modules.products.response.ProductFilterResponse;
 import org.example.podbackend.repositories.MerchantRepository;
 import org.example.podbackend.repositories.ProductRepository;
+import org.example.podbackend.utils.CloudinaryService;
 import org.example.podbackend.utils.MultiPartHandle;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Pageable;
@@ -31,18 +32,21 @@ public class ProductService {
   private final ObjectMapper objectMapper;
   private final MultiPartHandle multiPartHandle;
   private final MerchantRepository merchantRepository;
+  private final CloudinaryService cloudinaryService;
+
   public ProductService(
           ProductRepository productRepository,
           ModelMapper modelMapper,
           ObjectMapper objectMapper,
           MultiPartHandle multiPartHandle,
-          MerchantRepository merchantRepository
-  ) {
+          MerchantRepository merchantRepository,
+          CloudinaryService cloudinaryService) {
     this.productRepository = productRepository;
     this.modelMapper = modelMapper;
     this.objectMapper = objectMapper;
     this.multiPartHandle = multiPartHandle;
     this.merchantRepository = merchantRepository;
+    this.cloudinaryService = cloudinaryService;
   }
 
   public ResponseEntity<?> filter(Map<String, String> filters) {
@@ -62,14 +66,9 @@ public class ProductService {
     PodUserDetail userDetail = (PodUserDetail) authentication.getPrincipal();
     Merchant merchant = this.merchantRepository.findByIdAndUserId(createProductDTO.getMerchantId(), userDetail.getId());
     if(merchant == null) throw new NotFoundException("Merchant not found");
-    String image = null;
-    if(createProductDTO.getImage() != null && !createProductDTO.getImage().isEmpty()) {
-      image = multiPartHandle.handle(createProductDTO.getImage(), "products");
-      createProductDTO.setImage(null);
-    }
-    Product product = this.modelMapper.map(createProductDTO, Product.class);
+    Product product = new Product();
+    uploadImage(createProductDTO, product);
     product.setMerchant(merchant);
-    product.setImage(image);
     this.productRepository.save(product);
     return ResponseEntity.ok(true);
   }
@@ -81,13 +80,22 @@ public class ProductService {
     if(merchant == null) throw new BadRequestException("Merchant not found");
     Product product = this.productRepository.findByIdAndMerchantId(id, merchant.getId());
     if(product == null) throw new NotFoundException("Product not found");
-    if(dto.getImage() != null && !dto.getImage().isEmpty()) {
-      String image = multiPartHandle.handle(dto.getImage(), "products");
-      dto.setImage(null);
-      product.setImage(image);
-    }
-    this.modelMapper.map(dto, product);
+    uploadImage(dto, product);
     this.productRepository.save(product);
     return ResponseEntity.ok(true);
+  }
+
+  private void uploadImage(SetProductDTO dto, Product product) throws IOException {
+    if(dto.getImage() != null && !dto.getImage().isEmpty()) {
+      String localUrl = multiPartHandle.handle(dto.getImage());
+      String url = cloudinaryService.upload(localUrl, "products");
+      dto.setImage(null);
+      if(product.getImage() != null && !product.getImage().isEmpty()) {
+        cloudinaryService.delete(product.getImage());
+      }
+      product.setImage(url);
+      multiPartHandle.delete(localUrl);
+    }
+    this.modelMapper.map(dto, product);
   }
 }
