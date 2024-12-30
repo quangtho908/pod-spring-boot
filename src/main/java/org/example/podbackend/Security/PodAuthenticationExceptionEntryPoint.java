@@ -13,10 +13,8 @@ import java.io.IOException;
 
 @Component
 public class PodAuthenticationExceptionEntryPoint implements AuthenticationEntryPoint {
-  private final ObjectMapper objectMapper;
-  public PodAuthenticationExceptionEntryPoint(ObjectMapper objectMapper) {
+  public PodAuthenticationExceptionEntryPoint() {
     super();
-    this.objectMapper = objectMapper;
   }
 
   @Override

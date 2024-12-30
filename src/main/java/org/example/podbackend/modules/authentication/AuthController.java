@@ -3,6 +3,7 @@ package org.example.podbackend.modules.authentication;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.validation.Valid;
 import org.example.podbackend.modules.authentication.DTO.LoginDTO;
+import org.example.podbackend.modules.authentication.DTO.RefreshTokenDTO;
 import org.example.podbackend.modules.authentication.response.LoginResponse;
 import org.example.podbackend.modules.users.DTO.CreateUserDTO;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +29,12 @@ public class AuthController {
   }
 
   @PostMapping("/u/signup")
-  public ResponseEntity<LoginResponse> singup(@RequestBody @Valid CreateUserDTO dto) throws JsonProcessingException {
+  public ResponseEntity<LoginResponse> signup(@RequestBody @Valid CreateUserDTO dto) throws JsonProcessingException {
     return this.authService.signup(dto);
+  }
+
+  @PostMapping("/u/refresh")
+  public ResponseEntity<LoginResponse> refresh(@RequestBody @Valid RefreshTokenDTO dto) throws JsonProcessingException {
+    return this.authService.refresh(dto);
   }
 }

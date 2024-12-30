@@ -21,11 +21,11 @@ public class BankController {
     this.bankService = bankService;
   }
 
-  @GetMapping() public ResponseEntity<List<BankResponse>> getBanks() {
+  @GetMapping("/u") public ResponseEntity<List<BankResponse>> getBanks() {
     return this.bankService.getBanks();
   }
 
-  @PostMapping("/genQr")
+  @PostMapping("/u/genQr")
   public ResponseEntity<GenQRResponse> getBank(@RequestBody GenQRDTO dto) throws IOException, InterruptedException {
     return this.bankService.genQr(dto);
   }

@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -23,15 +24,18 @@ public class SecurityConfig {
 
   private final CustomUserDetailService customUserDetailService;
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
-  private PodAuthenticationExceptionEntryPoint podAuthenticationExceptionEntryPoint;
+  private final PodAuthenticationExceptionEntryPoint podAuthenticationExceptionEntryPoint;
+  private final TokenAuthenticationProvider tokenAuthenticationProvider;
   public SecurityConfig(
           CustomUserDetailService customUserDetailService,
           JwtAuthenticationFilter jwtAuthenticationFilter,
-          PodAuthenticationExceptionEntryPoint podAuthenticationExceptionEntryPoint
+          PodAuthenticationExceptionEntryPoint podAuthenticationExceptionEntryPoint,
+          TokenAuthenticationProvider tokenAuthenticationProvider
   ) {
     this.customUserDetailService = customUserDetailService;
     this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     this.podAuthenticationExceptionEntryPoint = podAuthenticationExceptionEntryPoint;
+    this.tokenAuthenticationProvider = tokenAuthenticationProvider;
   }
 
   @Bean
@@ -42,7 +46,7 @@ public class SecurityConfig {
         authorizeRequests
                 .requestMatchers("/api/auth/u/**").permitAll()
                 .requestMatchers("/image/**").permitAll()
-
+                .requestMatchers("/api/banks/u").permitAll()
                 .anyRequest().authenticated()
       )
       .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
@@ -53,11 +57,14 @@ public class SecurityConfig {
   }
 
   @Bean
-  public AuthenticationManager authenticationManagerBean() {
-    DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-    provider.setUserDetailsService(customUserDetailService);
-    provider.setPasswordEncoder(bCryptPasswordEncoder());
-    return new ProviderManager(provider);
+  public AuthenticationManager authenticationManagerBean(HttpSecurity http) throws Exception {
+    AuthenticationManagerBuilder authenticationManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
+    DaoAuthenticationProvider daoProvider = new DaoAuthenticationProvider();
+    daoProvider.setUserDetailsService(customUserDetailService);
+    daoProvider.setPasswordEncoder(bCryptPasswordEncoder());
+    authenticationManagerBuilder.authenticationProvider(tokenAuthenticationProvider);
+    authenticationManagerBuilder.authenticationProvider(daoProvider);
+    return authenticationManagerBuilder.build();
   }
 
   BCryptPasswordEncoder bCryptPasswordEncoder() {
