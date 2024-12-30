@@ -7,12 +7,15 @@ import org.example.podbackend.Security.Models.PodUserDetail;
 import org.example.podbackend.common.enums.VerifyAction;
 import org.example.podbackend.common.exceptions.BadRequestException;
 import org.example.podbackend.common.exceptions.NotFoundException;
+import org.example.podbackend.common.mapper.UserMerchantMapper;
+import org.example.podbackend.entities.UserLogin;
+import org.example.podbackend.entities.UserMerchant;
 import org.example.podbackend.entities.Users;
-import org.example.podbackend.modules.users.DTO.CreateUserDTO;
-import org.example.podbackend.modules.users.DTO.ReqVerifyDTO;
-import org.example.podbackend.modules.users.DTO.SetPasswordDTO;
-import org.example.podbackend.modules.users.DTO.VerifyDTO;
+import org.example.podbackend.modules.users.DTO.*;
+import org.example.podbackend.modules.users.response.SetMerchantResponse;
 import org.example.podbackend.modules.users.response.UserCreatedResponse;
+import org.example.podbackend.repositories.UserLoginRepository;
+import org.example.podbackend.repositories.UserMerchantRepository;
 import org.example.podbackend.repositories.UserRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
@@ -39,17 +42,26 @@ public class UsersService {
   private final UserRepository userRepository;
   private final BCryptPasswordEncoder bCryptPasswordEncoder;
   private final ModelMapper modelMapper;
+  private final UserMerchantRepository userMerchantRepository;
+  private final UserLoginRepository userLoginRepository;
+  private final UserMerchantMapper userMerchantMapper;
+
   public UsersService(
           UserRepository userRepository,
           RedisTemplate<String, Object> redisTemplate,
           RedisCacheManager redisCacheManager,
-          ModelMapper modelMapper
-  ) {
+          ModelMapper modelMapper,
+          UserMerchantRepository userMerchantRepository,
+          UserLoginRepository userLoginRepository,
+          UserMerchantMapper userMerchantMapper) {
     this.userRepository = userRepository;
     this.bCryptPasswordEncoder = new BCryptPasswordEncoder();
     this.redisTemplate = redisTemplate;
     this.redisCacheManager = redisCacheManager;
     this.modelMapper = modelMapper;
+    this.userMerchantRepository = userMerchantRepository;
+    this.userLoginRepository = userLoginRepository;
+    this.userMerchantMapper = userMerchantMapper;
   }
 
   public ResponseEntity<UserCreatedResponse> create(CreateUserDTO dto) throws JsonProcessingException {
@@ -92,6 +104,22 @@ public class UsersService {
     PodUserDetail userDetails = (PodUserDetail) authentication.getPrincipal();
     cache.put(STR."\{dto.getVerifyAction().toString()}_\{userDetails.getId()}_verifyCode", "000000");
     return new ResponseEntity<>(true, HttpStatus.OK);
+  }
+
+  public ResponseEntity<SetMerchantResponse> setMerchant(SetMerchantDTO dto) {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    PodUserDetail userDetail = (PodUserDetail) auth.getPrincipal();
+    UserMerchant userMerchant = userMerchantRepository.findByUserIdAndMerchantId(userDetail.getId(), dto.getMerchantId());
+    if (userMerchant == null) {
+      throw new BadRequestException("You do not in merchant");
+    }
+    UserLogin userLogin = new UserLogin();
+    userLogin.setMerchant(userMerchant.getMerchant());
+    userLogin.setUser(userMerchant.getUser());
+    userLogin.setFcm(dto.getExpoToken());
+    this.userLoginRepository.save(userLogin);
+    SetMerchantResponse response = userMerchantMapper.toSetMerchantResponse(userMerchant);
+    return new ResponseEntity<>(response, HttpStatus.OK);
   }
 
   public ResponseEntity<Boolean> verify(VerifyDTO dto) {

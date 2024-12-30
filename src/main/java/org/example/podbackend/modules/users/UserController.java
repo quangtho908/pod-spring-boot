@@ -3,13 +3,20 @@ package org.example.podbackend.modules.users;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.example.podbackend.Security.Models.PodUserDetail;
+import org.example.podbackend.common.exceptions.BadRequestException;
+import org.example.podbackend.entities.Merchant;
+import org.example.podbackend.entities.UserLogin;
+import org.example.podbackend.entities.UserMerchant;
 import org.example.podbackend.entities.Users;
-import org.example.podbackend.modules.users.DTO.CreateUserDTO;
-import org.example.podbackend.modules.users.DTO.ReqVerifyDTO;
-import org.example.podbackend.modules.users.DTO.SetPasswordDTO;
-import org.example.podbackend.modules.users.DTO.VerifyDTO;
+import org.example.podbackend.modules.users.DTO.*;
+import org.example.podbackend.modules.users.response.SetMerchantResponse;
 import org.example.podbackend.modules.users.response.UserCreatedResponse;
+import org.example.podbackend.repositories.UserLoginRepository;
+import org.example.podbackend.repositories.UserMerchantRepository;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -24,6 +31,11 @@ public class UserController {
   @PostMapping()
   public ResponseEntity<UserCreatedResponse> create(@RequestBody @Valid CreateUserDTO dto) throws JsonProcessingException {
     return this.usersService.create(dto);
+  }
+
+  @PostMapping("/setMerchant")
+  public ResponseEntity<SetMerchantResponse> setMerchant(@RequestBody @Valid SetMerchantDTO dto) throws JsonProcessingException {
+    return this.usersService.setMerchant(dto);
   }
 
   @PostMapping("/setPassword")
