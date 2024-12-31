@@ -5,7 +5,9 @@ import org.example.podbackend.Security.Models.PodUserDetail;
 import org.example.podbackend.common.enums.StatusOrder;
 import org.example.podbackend.common.exceptions.BadRequestException;
 import org.example.podbackend.common.mapper.OrderMapper;
+import org.example.podbackend.common.models.PushNotification;
 import org.example.podbackend.entities.*;
+import org.example.podbackend.modules.notification.NotificationService;
 import org.example.podbackend.modules.orders.DTO.*;
 import org.example.podbackend.modules.orders.response.OrderResponse;
 import org.example.podbackend.repositories.*;
@@ -38,6 +40,7 @@ public class OrderService {
   private final Executor asyncExecutor;
   private final ObjectMapper objectMapper;
   private final OrderMapper orderMapper;
+  private final NotificationService notificationService;
 
   public OrderService(
           InProgressOrderRepository inProgressOrderRepository,
@@ -49,8 +52,8 @@ public class OrderService {
           ModelMapper modelMapper,
           Executor asyncExecutor,
           ObjectMapper objectMapper,
-          OrderMapper orderMapper
-  ) {
+          OrderMapper orderMapper,
+          NotificationService notificationService) {
     this.inProgressOrderRepository = inProgressOrderRepository;
     this.productOrderRepository = productOrderRepository;
     this.productRepository = productRepository;
@@ -61,6 +64,7 @@ public class OrderService {
     this.asyncExecutor = asyncExecutor;
     this.objectMapper = objectMapper;
     this.orderMapper = orderMapper;
+    this.notificationService = notificationService;
   }
 
   public ResponseEntity<?> filter(@RequestParam Map<String, String> allParam) {
@@ -125,6 +129,10 @@ public class OrderService {
       table.setUsed(true);
       this.tableRepository.save(table);
     }
+    PushNotification pushNotification = new PushNotification();
+    pushNotification.setTitle(merchant.getName());
+    pushNotification.setBody("Đơn hàng mới được tạo");
+    notificationService.notiMerchant(merchant.getId(), pushNotification);
 
     OrderResponse filterResponse = orderMapper.mapToResponse(savedInProgressOrder);
     return ResponseEntity.ok(filterResponse);

@@ -32,6 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -113,11 +114,18 @@ public class UsersService {
     if (userMerchant == null) {
       throw new BadRequestException("You do not in merchant");
     }
-    UserLogin userLogin = new UserLogin();
-    userLogin.setMerchant(userMerchant.getMerchant());
-    userLogin.setUser(userMerchant.getUser());
-    userLogin.setFcm(dto.getExpoToken());
-    this.userLoginRepository.save(userLogin);
+    UserLogin exist = this.userLoginRepository.findByUserIdAndMerchantId(userDetail.getId(), dto.getMerchantId());
+    deActiveLogin(userDetail.getId());
+    if (exist == null) {
+      UserLogin userLogin = new UserLogin();
+      userLogin.setMerchant(userMerchant.getMerchant());
+      userLogin.setUser(userMerchant.getUser());
+      userLogin.setFcm(dto.getExpoToken());
+      this.userLoginRepository.save(userLogin);
+    }else {
+      exist.setActive(true);
+      this.userLoginRepository.save(exist);
+    }
     SetMerchantResponse response = userMerchantMapper.toSetMerchantResponse(userMerchant);
     return new ResponseEntity<>(response, HttpStatus.OK);
   }
@@ -134,10 +142,15 @@ public class UsersService {
     if(!dto.getCode().equals(verify.get())) {
       throw new BadRequestException("Code is invalid");
     }
-
     redisTemplate.delete(STR."users_verify::\{dto.getVerifyAction().toString()}_\{userDetails.getId()}_verifyCode");
     cache.put(STR."\{userDetails.getId()}_\{dto.getVerifyAction().toString()}", true);
 
     return new ResponseEntity<>(true, HttpStatus.OK);
+  }
+
+  private void deActiveLogin (Long userId) {
+    List<UserLogin> userLogins = this.userLoginRepository.findByUserIdAndIsActiveIsTrue(userId);
+    userLogins.forEach(userLogin -> userLogin.setActive(false));
+    this.userLoginRepository.saveAll(userLogins);
   }
 }

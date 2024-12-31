@@ -21,4 +21,7 @@ public class UserLogin extends BaseEntity {
 
   @Column(name = "fcm")
   private String fcm;
+
+  @Column(name = "is_active")
+  private boolean isActive = true;
 }

@@ -27,9 +27,7 @@ public class RedisConfig {
 
   @Bean
   RedisCacheManager cacheManager(RedisConnectionFactory redisConnectionFactory) {
-    RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
-            .entryTtl(Duration.ofDays(1))
-            .enableTimeToIdle();
+    RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig();
     Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
     cacheConfigurations.put("users_verify", RedisCacheConfiguration.defaultCacheConfig()
             .entryTtl(Duration.ofMinutes(5)));
