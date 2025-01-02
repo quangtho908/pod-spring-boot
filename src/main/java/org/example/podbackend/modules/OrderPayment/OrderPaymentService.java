@@ -7,6 +7,7 @@ import org.example.podbackend.common.exceptions.NotFoundException;
 import org.example.podbackend.entities.InProgressOrder;
 import org.example.podbackend.entities.Merchant;
 import org.example.podbackend.entities.OrderPayment;
+import org.example.podbackend.modules.OrderPayment.DTO.FilterOrderPaymentDTO;
 import org.example.podbackend.modules.OrderPayment.DTO.PaymentDTO;
 import org.example.podbackend.modules.orders.DTO.ChangeStatusOrderDTO;
 import org.example.podbackend.modules.orders.OrderService;
@@ -15,6 +16,7 @@ import org.example.podbackend.repositories.MerchantRepository;
 import org.example.podbackend.repositories.OrderPaymentRepository;
 import org.example.podbackend.utils.CloudinaryService;
 import org.example.podbackend.utils.MultiPartHandle;
+import org.hibernate.query.Order;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -23,6 +25,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -55,6 +58,13 @@ public class OrderPaymentService {
     this.multiPartHandle = multiPartHandle;
     this.cloudinaryService = cloudinaryService;
   }
+
+//  public ResponseEntity<?> filter(FilterOrderPaymentDTO dto) {
+//    if(dto.getId() != null) {
+//      OrderPayment orderPayment = orderPaymentRepository.findByInProgressOrderId(dto.getId());
+//      if(orderPayment == null) throw new NotFoundException("Order payment not found");
+//    }
+//  }
 
   public ResponseEntity<Boolean> create(PaymentDTO dto) throws ExecutionException, InterruptedException, IOException {
     Authentication auth = SecurityContextHolder.getContext().getAuthentication();

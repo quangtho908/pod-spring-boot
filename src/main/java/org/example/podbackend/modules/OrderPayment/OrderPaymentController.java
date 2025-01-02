@@ -2,6 +2,7 @@ package org.example.podbackend.modules.OrderPayment;
 
 import jakarta.validation.Valid;
 import org.example.podbackend.entities.OrderPayment;
+import org.example.podbackend.modules.OrderPayment.DTO.FilterOrderPaymentDTO;
 import org.example.podbackend.modules.OrderPayment.DTO.PaymentDTO;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,11 @@ public class OrderPaymentController {
   public OrderPaymentController(OrderPaymentService orderPaymentService) {
     this.orderPaymentService = orderPaymentService;
   }
+
+//  @GetMapping()
+//  public ResponseEntity<?> filter(@ModelAttribute FilterOrderPaymentDTO dto) {
+//
+//  }
 
   @PostMapping(consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
   public ResponseEntity<Boolean> createOrderPayment(@ModelAttribute @Valid PaymentDTO dto) throws ExecutionException, InterruptedException, IOException {

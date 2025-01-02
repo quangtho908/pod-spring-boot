@@ -8,16 +8,15 @@ import org.example.podbackend.common.exceptions.NotFoundException;
 import org.example.podbackend.common.mapper.MerchantMapper;
 import org.example.podbackend.common.mapper.UserMerchantMapper;
 import org.example.podbackend.entities.Merchant;
+import org.example.podbackend.entities.UserLogin;
 import org.example.podbackend.entities.UserMerchant;
 import org.example.podbackend.entities.Users;
-import org.example.podbackend.modules.merchants.DTO.CreateMerchantDTO;
-import org.example.podbackend.modules.merchants.DTO.FilterMerchantDTO;
-import org.example.podbackend.modules.merchants.DTO.InviteUserDTO;
-import org.example.podbackend.modules.merchants.DTO.UpdateMerchantDTO;
+import org.example.podbackend.modules.merchants.DTO.*;
 import org.example.podbackend.modules.merchants.response.MerchantCreateResponse;
 import org.example.podbackend.modules.merchants.response.MerchantFilterResponse;
 import org.example.podbackend.modules.merchants.response.UserMerchantResponse;
 import org.example.podbackend.repositories.MerchantRepository;
+import org.example.podbackend.repositories.UserLoginRepository;
 import org.example.podbackend.repositories.UserMerchantRepository;
 import org.example.podbackend.repositories.UserRepository;
 import org.modelmapper.ModelMapper;
@@ -41,14 +40,17 @@ public class MerchantService {
   private final ModelMapper modelMapper;
   private final MerchantMapper merchantMapper;
   private final UserMerchantMapper userMerchantMapper;
-
+  private final UserLoginRepository userLoginRepository;
   public MerchantService(
           MerchantRepository merchantRepository,
           ObjectMapper objectMapper,
           UserRepository userRepository,
           UserMerchantRepository userMerchantRepository,
           ModelMapper modelMapper,
-          MerchantMapper merchantMapper, UserMerchantMapper userMerchantMapper) {
+          MerchantMapper merchantMapper,
+          UserMerchantMapper userMerchantMapper,
+          UserLoginRepository userLoginRepository
+  ) {
     this.merchantRepository = merchantRepository;
     this.objectMapper = objectMapper;
     this.userRepository = userRepository;
@@ -56,6 +58,7 @@ public class MerchantService {
     this.modelMapper = modelMapper;
     this.merchantMapper = merchantMapper;
     this.userMerchantMapper = userMerchantMapper;
+    this.userLoginRepository = userLoginRepository;
   }
 
   public ResponseEntity<?> filter(Map<String, String> filters) {
@@ -149,6 +152,22 @@ public class MerchantService {
     ).toList();
 
     return ResponseEntity.ok(userMerchants);
+  }
+
+  public ResponseEntity<Boolean> deleteUser(DeleteUserDTO dto) {
+    UserMerchant userMerchant = this.userMerchantRepository.findByUserIdAndMerchantId(dto.getUserId(), dto.getMerchantId());
+    if (userMerchant == null) {
+      throw new BadRequestException("User does not in merchant");
+    }
+    if(userMerchant.getRole() == Roles.OWNER) {
+      throw new BadRequestException("User can't deleted");
+    }
+    UserLogin userLogin = this.userLoginRepository.findByUserIdAndMerchantId(dto.getUserId(), dto.getMerchantId());
+    if(userLogin != null) {
+      this.userLoginRepository.delete(userLogin);
+    }
+    this.userMerchantRepository.delete(userMerchant);
+    return ResponseEntity.ok(true);
   }
 
   private void _createUserMerchant(Merchant merchant, Users user) {

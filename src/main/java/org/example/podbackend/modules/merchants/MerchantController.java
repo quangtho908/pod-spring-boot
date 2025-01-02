@@ -3,6 +3,7 @@ package org.example.podbackend.modules.merchants;
 import jakarta.validation.Valid;
 import org.example.podbackend.common.exceptions.BadRequestException;
 import org.example.podbackend.modules.merchants.DTO.CreateMerchantDTO;
+import org.example.podbackend.modules.merchants.DTO.DeleteUserDTO;
 import org.example.podbackend.modules.merchants.DTO.InviteUserDTO;
 import org.example.podbackend.modules.merchants.DTO.UpdateMerchantDTO;
 import org.example.podbackend.modules.merchants.response.MerchantCreateResponse;
@@ -45,5 +46,10 @@ public class MerchantController {
   @PutMapping("/{id}")
   public ResponseEntity<Boolean> updateMerchant( @PathVariable Long id, @RequestBody() UpdateMerchantDTO dto) {
     return this.merchantService.update(dto, id);
+  }
+
+  @PutMapping("/users")
+  public ResponseEntity<Boolean> deleteUsers(@RequestBody DeleteUserDTO dto) {
+    return this.merchantService.deleteUser(dto);
   }
 }

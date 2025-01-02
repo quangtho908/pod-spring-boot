@@ -5,6 +5,7 @@ import org.example.podbackend.modules.merchants.response.UserMerchantResponse;
 import org.example.podbackend.modules.users.response.SetMerchantResponse;
 import org.mapstruct.BeforeMapping;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,7 @@ public abstract class UserMerchantMapper {
     modelMapper.map(userMerchant.getUser(), userMerchantResponse);
   }
 
+  @Mapping(target = "id", ignore = true)
   public abstract UserMerchantResponse toUserMerchantResponse(UserMerchant userMerchant);
 
   public abstract SetMerchantResponse toSetMerchantResponse(UserMerchant userMerchant);
