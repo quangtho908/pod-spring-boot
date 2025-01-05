@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 @RestController
@@ -19,10 +20,10 @@ public class OrderPaymentController {
     this.orderPaymentService = orderPaymentService;
   }
 
-//  @GetMapping()
-//  public ResponseEntity<?> filter(@ModelAttribute FilterOrderPaymentDTO dto) {
-//
-//  }
+  @GetMapping()
+  public ResponseEntity<?> filter(@RequestParam Map<String, String> params) {
+    return orderPaymentService.filter(params);
+  }
 
   @PostMapping(consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
   public ResponseEntity<Boolean> createOrderPayment(@ModelAttribute @Valid PaymentDTO dto) throws ExecutionException, InterruptedException, IOException {

@@ -19,6 +19,9 @@ public class FilterOrderPaymentDTO {
   @NotNull
   private Long merchantId;
 
+  @NotNull
+  private int page;
+
   @Enumerated(EnumType.STRING)
   private PaymentMethod paymentMethod = PaymentMethod.CASH;
 
