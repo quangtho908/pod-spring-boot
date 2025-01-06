@@ -4,11 +4,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.example.podbackend.Security.Models.PayloadToken;
 import org.example.podbackend.Security.Models.PodUserDetail;
 import org.example.podbackend.common.exceptions.BadRequestException;
+import org.example.podbackend.entities.Users;
 import org.example.podbackend.modules.authentication.DTO.LoginDTO;
 import org.example.podbackend.modules.authentication.DTO.RefreshTokenDTO;
 import org.example.podbackend.modules.authentication.response.LoginResponse;
 import org.example.podbackend.modules.users.DTO.CreateUserDTO;
 import org.example.podbackend.modules.users.UsersService;
+import org.example.podbackend.repositories.UserRepository;
 import org.example.podbackend.utils.JWTService;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -27,6 +29,7 @@ public class AuthService {
   private final AuthenticationManager authenticationManager;
   private final JWTService jwtService;
   private final UsersService usersService;
+  private final UserRepository userRepository;
   private final ModelMapper modelMapper;
   private final RedisTemplate<String, String> redisTemplate;
 
@@ -35,13 +38,15 @@ public class AuthService {
           JWTService jwtService,
           UsersService usersService,
           ModelMapper modelMapper,
-          RedisTemplate<String, String> redisTemplate
+          RedisTemplate<String, String> redisTemplate,
+          UserRepository userRepository
   ) {
     this.authenticationManager = authenticationManager;
     this.jwtService = jwtService;
     this.usersService = usersService;
     this.modelMapper = modelMapper;
     this.redisTemplate = redisTemplate;
+    this.userRepository = userRepository;
   }
 
   public ResponseEntity<LoginResponse> login(LoginDTO loginDTO) throws JsonProcessingException {
@@ -51,11 +56,15 @@ public class AuthService {
     );
     Authentication result = authenticationManager.authenticate(authentication);
     PodUserDetail userDetails = (PodUserDetail) result.getPrincipal();
+    Users users = this.userRepository.findById(userDetails.getId()).orElse(null);
+    if(users == null) {
+      throw new BadRequestException("User not found");
+    }
     SecurityContextHolder.getContext().setAuthentication(result);
     String token = jwtService.generateJwtToken(userDetails);
     String refreshToken = jwtService.generateJwtRefreshToken(userDetails);
     redisTemplate.opsForValue().set(refreshToken, String.valueOf(userDetails.getId()));
-    return new ResponseEntity<>(new LoginResponse(token, refreshToken), HttpStatus.OK);
+    return new ResponseEntity<>(new LoginResponse(token, refreshToken, users.isActive()), HttpStatus.OK);
   }
 
   public ResponseEntity<LoginResponse> signup(CreateUserDTO dto) throws JsonProcessingException {
@@ -71,9 +80,13 @@ public class AuthService {
     );
     Authentication result = authenticationManager.authenticate(authentication);
     PodUserDetail userDetails = (PodUserDetail) result.getPrincipal();
+    Users users = this.userRepository.findById(userDetails.getId()).orElse(null);
+    if(users == null) {
+      throw new BadRequestException("User not found");
+    }
     SecurityContextHolder.getContext().setAuthentication(result);
     String token = jwtService.generateJwtToken(userDetails);
-    LoginResponse loginResponse = new LoginResponse(token, dto.getRefreshToken());
+    LoginResponse loginResponse = new LoginResponse(token, dto.getRefreshToken(), users.isActive());
     return new ResponseEntity<>(loginResponse, HttpStatus.OK);
   }
 }

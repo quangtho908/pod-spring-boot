@@ -4,8 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 import org.example.podbackend.Security.Models.PodUserDetail;
 import org.example.podbackend.common.enums.StatusOrder;
+import org.example.podbackend.common.enums.TypeNoti;
 import org.example.podbackend.common.exceptions.BadRequestException;
 import org.example.podbackend.common.mapper.OrderMapper;
+import org.example.podbackend.common.models.DataNotification;
 import org.example.podbackend.common.models.PushNotification;
 import org.example.podbackend.entities.*;
 import org.example.podbackend.modules.notification.NotificationService;
@@ -105,7 +107,8 @@ public class OrderService {
 
       PushNotification pushNotification = new PushNotification();
       pushNotification.setTitle(merchant.getName());
-      pushNotification.setBody("Đơn hàng mới được tạo");
+      pushNotification.setBody(STR."Đơn hàng mới \{savedInProgressOrder.getId()} được tạo");
+      pushNotification.setData(new DataNotification(TypeNoti.CREATE_ORDER));
       notificationService.notiMerchant(merchant.getId(), pushNotification);
 
       OrderResponse filterResponse = orderMapper.mapToResponse(savedInProgressOrder);

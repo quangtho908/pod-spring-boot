@@ -9,4 +9,5 @@ public class PushNotification {
   private String title;
   private String body;
   private List<String> to;
+  private DataNotification data;
 }

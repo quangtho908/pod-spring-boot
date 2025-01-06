@@ -6,6 +6,6 @@ public enum VerifyAction {
   @JsonProperty("setPassword")
   SET_PASSWORD,
 
-  @JsonProperty("createAccount")
-  CREATE_ACCOUNT
+  @JsonProperty("activeAccount")
+  ACTIVE_ACCOUNT
 }

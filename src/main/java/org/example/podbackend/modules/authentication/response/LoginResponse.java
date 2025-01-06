@@ -7,9 +7,11 @@ import org.springframework.http.HttpStatusCode;
 public class LoginResponse {
   private String token;
   private String refreshToken;
+  private boolean active;
 
-  public LoginResponse(String token, String refreshToken) {
+  public LoginResponse(String token, String refreshToken, boolean active) {
     this.token = token;
     this.refreshToken = refreshToken;
+    this.active = active;
   }
 }

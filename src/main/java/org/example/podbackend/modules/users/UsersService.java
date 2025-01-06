@@ -135,6 +135,7 @@ public class UsersService {
     assert cache != null;
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     PodUserDetail userDetails = (PodUserDetail) authentication.getPrincipal();
+
     Cache.ValueWrapper verify = cache.get(STR."\{dto.getVerifyAction().toString()}_\{userDetails.getId()}_verifyCode");
     if(verify == null) {
       throw new BadRequestException("Code is expired");
@@ -142,10 +143,21 @@ public class UsersService {
     if(!dto.getCode().equals(verify.get())) {
       throw new BadRequestException("Code is invalid");
     }
-    redisTemplate.delete(STR."users_verify::\{dto.getVerifyAction().toString()}_\{userDetails.getId()}_verifyCode");
+    cache.evict(STR."\{dto.getVerifyAction().toString()}_\{userDetails.getId()}_verifyCode");
     cache.put(STR."\{userDetails.getId()}_\{dto.getVerifyAction().toString()}", true);
-
+    if(dto.getVerifyAction().compareTo(VerifyAction.ACTIVE_ACCOUNT) == 0) {
+      activeAccount(userDetails.getId());
+    }
     return new ResponseEntity<>(true, HttpStatus.OK);
+  }
+
+  private void activeAccount(long userId) {
+    Users users = this.userRepository.findById(userId).orElse(null);
+    if(users == null) {
+      throw new BadRequestException("User not found");
+    }
+    users.setActive(true);
+    this.userRepository.save(users);
   }
 
   private void deActiveLogin (Long userId) {

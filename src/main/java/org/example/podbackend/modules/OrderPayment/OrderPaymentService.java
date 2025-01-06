@@ -3,15 +3,19 @@ package org.example.podbackend.modules.OrderPayment;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.podbackend.Security.Models.PodUserDetail;
 import org.example.podbackend.common.enums.StatusOrder;
+import org.example.podbackend.common.enums.TypeNoti;
 import org.example.podbackend.common.exceptions.BadRequestException;
 import org.example.podbackend.common.exceptions.NotFoundException;
 import org.example.podbackend.common.mapper.OrderPaymentMapper;
+import org.example.podbackend.common.models.DataNotification;
+import org.example.podbackend.common.models.PushNotification;
 import org.example.podbackend.entities.InProgressOrder;
 import org.example.podbackend.entities.Merchant;
 import org.example.podbackend.entities.OrderPayment;
 import org.example.podbackend.modules.OrderPayment.DTO.FilterOrderPaymentDTO;
 import org.example.podbackend.modules.OrderPayment.DTO.PaymentDTO;
 import org.example.podbackend.modules.OrderPayment.response.OrderPaymentResponse;
+import org.example.podbackend.modules.notification.NotificationService;
 import org.example.podbackend.modules.orders.DTO.ChangeStatusOrderDTO;
 import org.example.podbackend.modules.orders.OrderService;
 import org.example.podbackend.repositories.InProgressOrderRepository;
@@ -48,6 +52,8 @@ public class OrderPaymentService {
   private final CloudinaryService cloudinaryService;
   private final OrderPaymentMapper orderPaymentMapper;
   private final ObjectMapper objectMapper;
+  private final NotificationService notificationService;
+
   public OrderPaymentService(
           OrderPaymentRepository orderPaymentRepository,
           MerchantRepository merchantRepository,
@@ -57,8 +63,8 @@ public class OrderPaymentService {
           MultiPartHandle multiPartHandle,
           CloudinaryService cloudinaryService,
           OrderPaymentMapper orderPaymentMapper,
-          ObjectMapper objectMapper
-  ) {
+          ObjectMapper objectMapper,
+          NotificationService notificationService) {
     this.orderPaymentRepository = orderPaymentRepository;
     this.merchantRepository = merchantRepository;
     this.inProgressOrderRepository = inProgressOrderRepository;
@@ -69,6 +75,7 @@ public class OrderPaymentService {
     this.cloudinaryService = cloudinaryService;
     this.orderPaymentMapper = orderPaymentMapper;
     this.objectMapper = objectMapper;
+    this.notificationService = notificationService;
   }
 
   public ResponseEntity<?> filter(Map<String, String> params) {
@@ -129,6 +136,13 @@ public class OrderPaymentService {
     changeStatusOrderDTO.setStatus(StatusOrder.DONE);
     changeStatusOrderDTO.setMerchantId(merchant.getId());
     this.orderService.changeStatusOrder(dto.getOrderId(), changeStatusOrderDTO);
+
+    PushNotification pushNotification = new PushNotification();
+    pushNotification.setTitle(merchant.getName());
+    pushNotification.setBody(STR."Đơn hàng \{dto.getOrderId()} Thanh toán thành công");
+    pushNotification.setData(new DataNotification(TypeNoti.PAYMENT_ORDER));
+    notificationService.notiMerchant(merchant.getId(), pushNotification);
+
     return ResponseEntity.ok(true);
   }
 }
