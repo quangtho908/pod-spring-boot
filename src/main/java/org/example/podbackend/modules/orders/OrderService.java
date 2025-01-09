@@ -94,7 +94,7 @@ public class OrderService {
       return ResponseEntity.ok(response);
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public ResponseEntity<OrderResponse> createOrder(CreateOrderDTO dto) throws ExecutionException, InterruptedException {
       InProgressOrder savedInProgressOrder = this.create(dto);
       productOrderService.bulkSave(dto.getProducts(), savedInProgressOrder);
@@ -115,7 +115,8 @@ public class OrderService {
       return ResponseEntity.ok(filterResponse);
     }
 
-    public ResponseEntity<Boolean> updateOrder(UpdateOrderDTO dto, Long orderId) throws ExecutionException, InterruptedException {
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public ResponseEntity<Boolean> updateOrder(UpdateOrderDTO dto, Long orderId) {
       InProgressOrder inProgressOrder = this.inProgressOrderRepository.findByIdAndMerchantIdAndStatusIn(
               orderId, dto.getMerchantId(), List.of(StatusOrder.WAITING, StatusOrder.PROGRESS)
       );
@@ -123,36 +124,15 @@ public class OrderService {
       modelMapper.map(dto, inProgressOrder);
       this.inProgressOrderRepository.save(inProgressOrder);
 
-      CompletableFuture<Void> threads = CompletableFuture.allOf(dto.getProducts().stream().map((productOrderDTO) ->
-        CompletableFuture.runAsync(() -> {
-          ProductOrder productOrder = this.productOrderRepository.findByInProgressOrderIdAndProductId(inProgressOrder.getId(), productOrderDTO.getProductId());
-          if (productOrder != null) {
-            modelMapper.map(productOrderDTO, productOrder);
-            this.productOrderRepository.save(productOrder);
-            return;
-          };
-          Product product = this.productRepository.findByIdAndMerchantId(productOrderDTO.getProductId(), dto.getMerchantId());
-          if (product == null) return;
-          productOrder = new ProductOrder();
-          productOrder.setInProgressOrder(inProgressOrder);
-          productOrder.setProduct(product);
-          modelMapper.map(productOrderDTO, productOrder);
-          this.productOrderRepository.save(productOrder);
-        }, asyncExecutor)
-      ).toArray(CompletableFuture[]::new));
-
-      threads.join();
+      this.productOrderService.bulkUpdate(dto.getProducts(), inProgressOrder);
       return ResponseEntity.ok(true);
     }
 
-    public ResponseEntity<Boolean> removeProductOrder(RemoveProductOrderDTO dto, Long id) throws ExecutionException, InterruptedException {
-      CompletableFuture<Void> threads = CompletableFuture.allOf( Arrays.stream(dto.getProducts()).map(productOrderDTO ->
-          CompletableFuture.runAsync(() -> {
-            this.productOrderRepository.remove(productOrderDTO.getProductId(), id);
-          }, asyncExecutor)
-        ).toArray(CompletableFuture[]::new)
-      );
-      threads.join();
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public ResponseEntity<Boolean> removeProductOrder(RemoveProductOrderDTO dto, Long id) {
+      Arrays.stream(dto.getProducts()).forEach(product -> {
+        this.productOrderRepository.remove(product.getProductId(), id);
+      });
       return ResponseEntity.ok(true);
     }
 

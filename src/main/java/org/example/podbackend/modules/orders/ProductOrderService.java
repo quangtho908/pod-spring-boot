@@ -44,4 +44,22 @@ public class ProductOrderService {
       }
     );
   }
+
+  public void bulkUpdate(List<ProductOrderDTO> products, InProgressOrder inProgressOrder) {
+    products.forEach((productOrderDTO) -> {
+      ProductOrder productOrder = this.productOrderRepository.findByInProgressOrderIdAndProductId(inProgressOrder.getId(), productOrderDTO.getProductId());
+      if (productOrder != null) {
+        modelMapper.map(productOrderDTO, productOrder);
+        this.productOrderRepository.save(productOrder);
+        return;
+      };
+      Product product = this.productRepository.findByIdAndMerchantId(productOrderDTO.getProductId(), inProgressOrder.getMerchant().getId());
+      if (product == null) return;
+      productOrder = new ProductOrder();
+      productOrder.setInProgressOrder(inProgressOrder);
+      productOrder.setProduct(product);
+      modelMapper.map(productOrderDTO, productOrder);
+      this.productOrderRepository.save(productOrder);
+    });
+  }
 }
