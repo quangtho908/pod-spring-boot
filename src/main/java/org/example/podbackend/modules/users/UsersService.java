@@ -11,12 +11,16 @@ import org.example.podbackend.common.mapper.UserMerchantMapper;
 import org.example.podbackend.entities.UserLogin;
 import org.example.podbackend.entities.UserMerchant;
 import org.example.podbackend.entities.Users;
+import org.example.podbackend.modules.merchants.response.UserMerchantResponse;
 import org.example.podbackend.modules.users.DTO.*;
 import org.example.podbackend.modules.users.response.SetMerchantResponse;
 import org.example.podbackend.modules.users.response.UserCreatedResponse;
+import org.example.podbackend.modules.users.response.UserResponse;
 import org.example.podbackend.repositories.UserLoginRepository;
 import org.example.podbackend.repositories.UserMerchantRepository;
 import org.example.podbackend.repositories.UserRepository;
+import org.example.podbackend.utils.CloudinaryService;
+import org.example.podbackend.utils.MultiPartHandle;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,8 +36,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class UsersService {
@@ -46,6 +52,8 @@ public class UsersService {
   private final UserMerchantRepository userMerchantRepository;
   private final UserLoginRepository userLoginRepository;
   private final UserMerchantMapper userMerchantMapper;
+  private final MultiPartHandle multiPartHandle;
+  private final CloudinaryService cloudinaryService;
 
   public UsersService(
           UserRepository userRepository,
@@ -54,7 +62,7 @@ public class UsersService {
           ModelMapper modelMapper,
           UserMerchantRepository userMerchantRepository,
           UserLoginRepository userLoginRepository,
-          UserMerchantMapper userMerchantMapper) {
+          UserMerchantMapper userMerchantMapper, MultiPartHandle multiPartHandle, CloudinaryService cloudinaryService) {
     this.userRepository = userRepository;
     this.bCryptPasswordEncoder = new BCryptPasswordEncoder();
     this.redisTemplate = redisTemplate;
@@ -63,6 +71,40 @@ public class UsersService {
     this.userMerchantRepository = userMerchantRepository;
     this.userLoginRepository = userLoginRepository;
     this.userMerchantMapper = userMerchantMapper;
+    this.multiPartHandle = multiPartHandle;
+    this.cloudinaryService = cloudinaryService;
+  }
+
+  public ResponseEntity<Boolean> setAvatar(SetAvatarDTO dto) throws IOException {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    PodUserDetail userDetail = (PodUserDetail) auth.getPrincipal();
+    Optional<Users> users = this.userRepository.findById(userDetail.getId());
+    if (users.isEmpty()) {
+      throw new BadRequestException("User not found");
+    }
+    Users user = users.get();
+    if(dto.getImage() != null && !dto.getImage().isEmpty()) {
+      String localUrl = multiPartHandle.handle(dto.getImage());
+      String url = cloudinaryService.upload(localUrl, "avatars");
+      if(user.getAvatar() != null && !user.getAvatar().isEmpty()) {
+        cloudinaryService.delete(user.getAvatar());
+      }
+      user.setAvatar(url);
+      this.userRepository.save(user);
+      multiPartHandle.delete(localUrl);
+    }
+    return ResponseEntity.ok(true);
+  }
+
+  public ResponseEntity<UserResponse> getUser() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    PodUserDetail userDetail = (PodUserDetail) authentication.getPrincipal();
+    Optional<Users> user = userRepository.findById(userDetail.getId());
+    if(user.isEmpty()) {
+      throw new BadRequestException("User not exist");
+    }
+    UserResponse userResponse = modelMapper.map(user.get(), UserResponse.class);
+    return ResponseEntity.ok(userResponse);
   }
 
   public ResponseEntity<UserCreatedResponse> create(CreateUserDTO dto) throws JsonProcessingException {
@@ -80,23 +122,24 @@ public class UsersService {
   }
 
   public ResponseEntity<Boolean> setPassword(SetPasswordDTO dto) throws JsonProcessingException {
-//    Optional<Users> exist = this.userRepository.findById(dto.getId());
-//    if (exist.isEmpty()) {
-//      throw new NotFoundException("User does not exist");
-//    }
-//    Users user = exist.get();
-//    Cache cache = redisCacheManager.getCache("users_verify");
-//    boolean isFirst = user.getPassword() == null || user.getPassword().isEmpty();
-//    Cache.ValueWrapper isVerified = cache.get(STR."\{user.getId()}_\{VerifyAction.SET_PASSWORD}");
-//    System.out.println(isVerified.get());
-//    if(!isFirst && (isVerified == null || !((boolean) isVerified.get()))) {
-//      throw new BadRequestException("Set password verification failed");
-//    }
-//    String hashPassword = this.bCryptPasswordEncoder.encode(dto.getPassword());
-//    user.setPassword(hashPassword);
-//    this.userRepository.save(user);
-//    return ResponseEntity.ok(true);
-    return null;
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    PodUserDetail userDetail = (PodUserDetail) authentication.getPrincipal();
+    Optional<Users> exist = this.userRepository.findById(userDetail.getId());
+    if (exist.isEmpty()) {
+      throw new NotFoundException("User does not exist");
+    }
+    Users user = exist.get();
+    Cache cache = redisCacheManager.getCache("users_verify");
+    Cache.ValueWrapper isVerified = cache.get(STR."\{user.getId()}_\{VerifyAction.SET_PASSWORD}");
+    if(isVerified == null || !(boolean) isVerified.get()) {
+      throw new BadRequestException("Set password verification failed");
+    }
+
+    String hashPassword = this.bCryptPasswordEncoder.encode(dto.getPassword());
+    user.setPassword(hashPassword);
+    this.userRepository.save(user);
+    cache.evict(STR."\{user.getId()}_\{VerifyAction.SET_PASSWORD}");
+    return ResponseEntity.ok(true);
   }
 
   public ResponseEntity<Boolean> reqVerify(ReqVerifyDTO dto) {
@@ -158,6 +201,19 @@ public class UsersService {
     }
     users.setActive(true);
     this.userRepository.save(users);
+  }
+
+  public ResponseEntity<Boolean> updateUser(UpdateUserDTO dto) {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    PodUserDetail userDetail = (PodUserDetail) auth.getPrincipal();
+    Optional<Users> users = this.userRepository.findById(userDetail.getId());
+    if(users.isEmpty()) {
+      throw new BadRequestException("User not found");
+    }
+    Users user = users.get();
+    modelMapper.map(dto, user);
+    this.userRepository.save(user);
+    return new ResponseEntity<>(true, HttpStatus.OK);
   }
 
   private void deActiveLogin (Long userId) {

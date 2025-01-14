@@ -32,4 +32,7 @@ public class Users extends BaseEntity{
 
   @OneToMany(mappedBy = "createdBy")
   private List<InProgressOrder> inProgressOrders;
+
+  @Column()
+  private String avatar;
 }

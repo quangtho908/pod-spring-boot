@@ -7,12 +7,6 @@ import lombok.Data;
 
 @Data
 public class SetPasswordDTO {
-
-  @NotNull(message = "Old password is required")
-  @NotBlank(message = "Old password is required")
-  @NotEmpty(message = "Old password is required")
-  private String oldPassword;
-
   @NotNull(message = "Old password is required")
   @NotBlank(message = "Old password is required")
   @NotEmpty(message = "Old password is required")

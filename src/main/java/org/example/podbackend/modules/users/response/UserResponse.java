@@ -1,13 +1,12 @@
-package org.example.podbackend.modules.merchants.response;
+package org.example.podbackend.modules.users.response;
 
 import lombok.Data;
 
 @Data
-public class UserMerchantResponse {
+public class UserResponse {
   private String id;
   private String phoneNumber;
   private String email;
-  private String role;
   private String fullName;
   private String avatar;
 }

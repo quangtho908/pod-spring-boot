@@ -9,15 +9,22 @@ import org.example.podbackend.entities.Merchant;
 import org.example.podbackend.entities.UserLogin;
 import org.example.podbackend.entities.UserMerchant;
 import org.example.podbackend.entities.Users;
+import org.example.podbackend.modules.merchants.response.UserMerchantResponse;
 import org.example.podbackend.modules.users.DTO.*;
 import org.example.podbackend.modules.users.response.SetMerchantResponse;
 import org.example.podbackend.modules.users.response.UserCreatedResponse;
+import org.example.podbackend.modules.users.response.UserResponse;
 import org.example.podbackend.repositories.UserLoginRepository;
 import org.example.podbackend.repositories.UserMerchantRepository;
+import org.example.podbackend.utils.CloudinaryService;
+import org.example.podbackend.utils.MultiPartHandle;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/users")
@@ -26,6 +33,16 @@ public class UserController {
 
   public UserController(UsersService usersService) {
     this.usersService = usersService;
+  }
+
+  @GetMapping
+  private ResponseEntity<UserResponse> getUser() {
+    return this.usersService.getUser();
+  }
+
+  @PostMapping("/avatar")
+  private ResponseEntity<Boolean> setAvatar(@ModelAttribute SetAvatarDTO dto) throws IOException {
+    return this.usersService.setAvatar(dto);
   }
 
   @PostMapping()
@@ -51,5 +68,10 @@ public class UserController {
   @PostMapping("/verify")
   public ResponseEntity<Boolean> verify(@RequestBody VerifyDTO dto) {
     return this.usersService.verify(dto);
+  }
+
+  @PutMapping()
+  public ResponseEntity<Boolean> updateUser(@RequestBody @Valid UpdateUserDTO dto)  {
+    return this.usersService.updateUser(dto);
   }
 }
