@@ -37,4 +37,9 @@ public class AuthController {
   public ResponseEntity<LoginResponse> refresh(@RequestBody @Valid RefreshTokenDTO dto) throws JsonProcessingException {
     return this.authService.refresh(dto);
   }
+
+  @PostMapping("/logout")
+  public ResponseEntity<Boolean> logout(@RequestBody @Valid RefreshTokenDTO dto) throws JsonProcessingException {
+    return this.authService.logout(dto);
+  }
 }

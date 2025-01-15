@@ -89,4 +89,12 @@ public class AuthService {
     LoginResponse loginResponse = new LoginResponse(token, dto.getRefreshToken(), users.isActive());
     return new ResponseEntity<>(loginResponse, HttpStatus.OK);
   }
+
+  public ResponseEntity<Boolean> logout(RefreshTokenDTO dto) {
+    String existLogin = redisTemplate.opsForValue().get(dto.getRefreshToken());
+    if(existLogin != null) {
+      redisTemplate.delete(dto.getRefreshToken());
+    }
+    return ResponseEntity.ok(true);
+  }
 }
