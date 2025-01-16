@@ -10,7 +10,7 @@ public class SetProductDTO {
   private String name;
   @NotNull(message = "Price not null")
   private Long price;
-  private MultipartFile image;
+  private MultipartFile image = null;
   @NotNull(message = "merchant id not null")
   private Long merchantId;
 }

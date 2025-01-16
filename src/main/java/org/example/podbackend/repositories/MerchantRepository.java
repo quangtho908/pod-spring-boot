@@ -15,4 +15,6 @@ public interface MerchantRepository extends BaseRepository<Merchant, Long> {
 
   @Query("SELECT m FROM Merchant m INNER JOIN m.userMerchants um ON um.merchant.id = m.id AND um.user.id = :id")
   public List<Merchant> filter(long id, Pageable pageable);
+
+  Merchant findByIdAndIsActiveIsTrue(Long merchantId);
 }

@@ -15,6 +15,7 @@ public abstract class MerchantMapper {
   protected void before(Merchant source, @MappingTarget MerchantFilterResponse target) {
     String role = String.valueOf(Objects.requireNonNull(source.getUserMerchants().stream().findFirst().orElse(null)).getRole());
     target.setRole(role);
+    target.setAvatar(source.getAvatar());
   };
 
   public abstract MerchantFilterResponse mapToResponse(Merchant source);

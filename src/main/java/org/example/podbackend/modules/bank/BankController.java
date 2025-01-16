@@ -1,6 +1,7 @@
 package org.example.podbackend.modules.bank;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import jakarta.validation.Valid;
 import org.example.podbackend.entities.Bank;
 import org.example.podbackend.modules.bank.DTO.GenQRDTO;
 import org.example.podbackend.modules.bank.DTO.GetAccountNameDTO;
@@ -36,7 +37,7 @@ public class BankController {
   }
 
   @PostMapping()
-  public ResponseEntity<AccountNameResponse> getAccountName(@RequestBody GetAccountNameDTO dto) {
+  public ResponseEntity<AccountNameResponse> getAccountName(@RequestBody @Valid GetAccountNameDTO dto) {
     return bankService.getAccountName(dto);
   }
 }

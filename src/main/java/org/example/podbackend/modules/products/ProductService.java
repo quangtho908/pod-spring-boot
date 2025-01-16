@@ -95,6 +95,11 @@ public class ProductService {
       }
       product.setImage(url);
       multiPartHandle.delete(localUrl);
+    }else {
+      if(product.getImage() != null && !product.getImage().isEmpty()) {
+        cloudinaryService.delete(product.getImage());
+      }
+      product.setImage(null);
     }
     this.modelMapper.map(dto, product);
   }

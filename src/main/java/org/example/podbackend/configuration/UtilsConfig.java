@@ -2,6 +2,8 @@ package org.example.podbackend.configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.mailjet.client.ClientOptions;
+import com.mailjet.client.MailjetClient;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.modelmapper.spi.MappingContext;
@@ -47,5 +49,16 @@ public class UtilsConfig {
   @Bean
   public Executor asyncExecutor() {
     return Executors.newThreadPerTaskExecutor(Thread.ofVirtual().factory());
+  }
+
+  @Bean
+  public MailjetClient mailjetClient() {
+
+    ClientOptions options = ClientOptions.builder()
+            .apiKey("0591f9ae8b4baee079a7e6611a0a33dd")
+            .apiSecretKey("e51551689be44bb4f85f2c34a5a33d96")
+            .build();
+
+    return new MailjetClient(options);
   }
 }

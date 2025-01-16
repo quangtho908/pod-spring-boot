@@ -24,6 +24,12 @@ public class Merchant extends BaseEntity {
   @Column(name = "phone_number")
   private String phoneNumber;
 
+  @Column(name = "is_active")
+  private boolean isActive = true;
+
+  @Column()
+  private String avatar;
+
   @OneToMany(mappedBy = "merchant")
   private List<UserMerchant> userMerchants;
 

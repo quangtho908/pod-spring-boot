@@ -6,8 +6,9 @@ import org.example.podbackend.modules.bank.response.AccountNameResponse;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class VietQRAccountName {
-  private String code;
-  private String desc;
+public class LookUpAccountName {
+  private Long code;
+  private String msg;
+  private boolean success;
   private AccountNameResponse data;
 }

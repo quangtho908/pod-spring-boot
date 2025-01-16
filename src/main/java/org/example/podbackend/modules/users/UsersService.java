@@ -20,7 +20,9 @@ import org.example.podbackend.repositories.UserLoginRepository;
 import org.example.podbackend.repositories.UserMerchantRepository;
 import org.example.podbackend.repositories.UserRepository;
 import org.example.podbackend.utils.CloudinaryService;
+import org.example.podbackend.utils.MailjetService;
 import org.example.podbackend.utils.MultiPartHandle;
+import org.example.podbackend.utils.UtilsService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,6 +56,8 @@ public class UsersService {
   private final UserMerchantMapper userMerchantMapper;
   private final MultiPartHandle multiPartHandle;
   private final CloudinaryService cloudinaryService;
+  private final UtilsService utilsService;
+  private final MailjetService mailjetService;
 
   public UsersService(
           UserRepository userRepository,
@@ -62,7 +66,7 @@ public class UsersService {
           ModelMapper modelMapper,
           UserMerchantRepository userMerchantRepository,
           UserLoginRepository userLoginRepository,
-          UserMerchantMapper userMerchantMapper, MultiPartHandle multiPartHandle, CloudinaryService cloudinaryService) {
+          UserMerchantMapper userMerchantMapper, MultiPartHandle multiPartHandle, CloudinaryService cloudinaryService, UtilsService utilsService, MailjetService mailjetService) {
     this.userRepository = userRepository;
     this.bCryptPasswordEncoder = new BCryptPasswordEncoder();
     this.redisTemplate = redisTemplate;
@@ -73,6 +77,8 @@ public class UsersService {
     this.userMerchantMapper = userMerchantMapper;
     this.multiPartHandle = multiPartHandle;
     this.cloudinaryService = cloudinaryService;
+    this.utilsService = utilsService;
+    this.mailjetService = mailjetService;
   }
 
   public ResponseEntity<Boolean> setAvatar(SetAvatarDTO dto) throws IOException {
@@ -92,6 +98,12 @@ public class UsersService {
       user.setAvatar(url);
       this.userRepository.save(user);
       multiPartHandle.delete(localUrl);
+    }else {
+      if(user.getAvatar() != null && !user.getAvatar().isEmpty()) {
+        cloudinaryService.delete(user.getAvatar());
+      }
+      user.setAvatar(null);
+      this.userRepository.save(user);
     }
     return ResponseEntity.ok(true);
   }
@@ -146,7 +158,13 @@ public class UsersService {
     Cache cache = redisCacheManager.getCache("users_verify");
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     PodUserDetail userDetails = (PodUserDetail) authentication.getPrincipal();
-    cache.put(STR."\{dto.getVerifyAction().toString()}_\{userDetails.getId()}_verifyCode", "000000");
+    Optional<Users> exist = this.userRepository.findById(userDetails.getId());
+    if (exist.isEmpty()) {
+      throw new NotFoundException("User does not exist");
+    }
+    String code = utilsService.generateRandomString();
+    cache.put(STR."\{dto.getVerifyAction().toString()}_\{userDetails.getId()}_verifyCode", code);
+    mailjetService.sendMail(exist.get().getEmail(), dto.getVerifyAction().toString(), code);
     return new ResponseEntity<>(true, HttpStatus.OK);
   }
 

@@ -18,6 +18,7 @@ public class MerchantFilterResponse {
   private String address;
   private String phoneNumber;
   private String role;
+  private String avatar;
 
   @JsonSerialize(using = LocalDateTimeSerializer.class)
   @JsonFormat(pattern = "MM/dd/yyyy, HH:mm:ss a")

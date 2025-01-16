@@ -19,6 +19,8 @@ import org.example.podbackend.repositories.MerchantRepository;
 import org.example.podbackend.repositories.UserLoginRepository;
 import org.example.podbackend.repositories.UserMerchantRepository;
 import org.example.podbackend.repositories.UserRepository;
+import org.example.podbackend.utils.CloudinaryService;
+import org.example.podbackend.utils.MultiPartHandle;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +28,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -41,6 +44,9 @@ public class MerchantService {
   private final MerchantMapper merchantMapper;
   private final UserMerchantMapper userMerchantMapper;
   private final UserLoginRepository userLoginRepository;
+  private final MultiPartHandle multiPartHandle;
+  private final CloudinaryService cloudinaryService;
+
   public MerchantService(
           MerchantRepository merchantRepository,
           ObjectMapper objectMapper,
@@ -49,8 +55,8 @@ public class MerchantService {
           ModelMapper modelMapper,
           MerchantMapper merchantMapper,
           UserMerchantMapper userMerchantMapper,
-          UserLoginRepository userLoginRepository
-  ) {
+          UserLoginRepository userLoginRepository,
+          MultiPartHandle multiPartHandle, CloudinaryService cloudinaryService) {
     this.merchantRepository = merchantRepository;
     this.objectMapper = objectMapper;
     this.userRepository = userRepository;
@@ -59,6 +65,8 @@ public class MerchantService {
     this.merchantMapper = merchantMapper;
     this.userMerchantMapper = userMerchantMapper;
     this.userLoginRepository = userLoginRepository;
+    this.multiPartHandle = multiPartHandle;
+    this.cloudinaryService = cloudinaryService;
   }
 
   public ResponseEntity<?> filter(Map<String, String> filters) {
@@ -112,6 +120,28 @@ public class MerchantService {
     modelMapper.map(updateMerchantDTO, merchant);
     this.merchantRepository.save(merchant);
 
+    return ResponseEntity.ok(true);
+  }
+
+  public ResponseEntity<Boolean> updateAvatar(UploadAvatarDTO dto, Long merchantId) throws IOException {
+    Merchant merchant = this.merchantRepository.findByIdAndIsActiveIsTrue(merchantId);
+    if(merchant == null) throw new NotFoundException("Merchant not found");
+    if(dto.getImage() != null && !dto.getImage().isEmpty()) {
+      String localUrl = multiPartHandle.handle(dto.getImage());
+      String url = cloudinaryService.upload(localUrl, "avatars");
+      if(merchant.getAvatar() != null && !merchant.getAvatar().isEmpty()) {
+        cloudinaryService.delete(merchant.getAvatar());
+      }
+      merchant.setAvatar(url);
+      this.merchantRepository.save(merchant);
+      multiPartHandle.delete(localUrl);
+    }else {
+      if(merchant.getAvatar() != null && !merchant.getAvatar().isEmpty()) {
+        cloudinaryService.delete(merchant.getAvatar());
+      }
+      merchant.setAvatar(null);
+      this.merchantRepository.save(merchant);
+    }
     return ResponseEntity.ok(true);
   }
 
